@@ -13,8 +13,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 public class App {  
     public static void main(String[] args) {  
 
+        
         //CAMBIA LA RUTA POR LA TUYA
-        String path = "/home/axel/Escritorio/Prueba/demo/src/main/java/com/Entrada.xlsx";
+        String path = "/home/axel/Escritorio/Prueba/demo/src/main/java/com/Entrada2.xlsx";
         File DirArchivo = new File(path);
 
         try{
@@ -25,60 +26,69 @@ public class App {
             Iterator<Row> IteradorFila = sheet.iterator(); //obtenemos las filas de la hoja
 
             ArrayList<String> NombresIncognitas = new ArrayList<String>(); //Creamos el ArrayList donde almacenaremos los nombres de las incognitas
-            Row fila; //Una variable de tipo fila en la que almacenaremos cada una de las filas
-
-            //Recorremos cada fila de la hoja 
-            while(IteradorFila.hasNext()){
-                ArrayList<String> valores = new ArrayList<String>(); //Creamos el ArrayList donde almacenaremos los valores extraidos
-
-                fila = IteradorFila.next(); //tomamos la fila
-
-                if(fila.getRowNum() == 0){ //Si es la primer fila(la del nombre), tomamos los valores de las celdas y los almacenamos en un ArrayList
-                    
-                    //Obtenemos las celdas de la fila
-                    Iterator<Cell> BuscandoNombres = fila.cellIterator();
-                    Cell celda; //variable de tipo celda para almacenar lass celdas de la fila actual
-
-                    //Recorremos la fila buscando y almacenando los nombres de las incognitas
-                    while(BuscandoNombres.hasNext()){
-                        celda = BuscandoNombres.next();
-                        String Incognita = celda.toString();
-                        NombresIncognitas.add(Incognita);
-                    }
-                    
-                    System.out.println("Incognitas = "+NombresIncognitas); // imprime los nombres de las incognitas
-
-                    fila = IteradorFila.next(); //Saltamos a la siguiente fila
+            ArrayList<Variable> listaVariables = new ArrayList<>();
+            Row fila; //Una variable de tipo fila en la que iremos almacenando la fila a leer
+            Variable xn = null; //Creamos una nueva variable
+            
+            fila = IteradorFila.next(); //tomamos la fila
+            if(fila.getRowNum() == 0){ //Si es la primer fila(la del nombre), tomamos los valores de las celdas y los almacenamos en un ArrayList
+                //Obtenemos las celdas de la fila
+                Iterator<Cell> BuscandoNombres = fila.cellIterator();
+                Cell celda; //variable de tipo celda para almacenar lass celdas de la fila actual
+                //Recorremos la fila buscando y almacenando los nombres de las incognitas
+                while(BuscandoNombres.hasNext()){
+                    celda = BuscandoNombres.next();
+                    String Incognita = celda.toString();
+                    NombresIncognitas.add(Incognita);
                 }
-
-
-                //Mismo procedimiento de arriba pero ahora para obtener los valores
-                Iterator<Cell> cellIterator = fila.cellIterator();
-                Cell celda;
-
-                while(cellIterator.hasNext()){ //...Recorremos las celdas de esa fila
-                    celda = cellIterator.next();
-
-
-                    /*
-                    Por ejemplo, tenemos la ecuacion: (12 + x_1) - x_5
-                    
-                    Esta clase podria recibir un array con los nombres de esas incognitas, y en los ifs de abajo buscar esos nombres
-                    */
-
-                    //AQUI ESTAMOS RECIBIENDO SOLO LOS VALORES DE X_1 Y X_5
-                    if(celda.getColumnIndex() == NombresIncognitas.indexOf("x_5")){ //Aqui podriamos recibir el nombre de la incognita a buscar
-                        valores.add(celda.toString());   //Agregamos la celda al ArrayList
-                    } 
-                    else if (celda.getColumnIndex() == NombresIncognitas.indexOf("x_1")){ //...aca igual
-                        valores.add(celda.toString());   //Agregamos la celda al ArrayList
-                    }
-                }
-                System.out.println("\t  "+valores); // imprime los valores
             }
+
+            //Recorremos la hoja una vez por cada columna
+            for(int i = 0; i < NombresIncognitas.size(); i++){
+                String NombreCol = NombresIncognitas.get(i);
+                //Variable xn = new Variable(NombreCol); //Creamos una nueva variable
+                xn = new Variable(NombreCol); //Creamos una nueva variable
+                IteradorFila = sheet.iterator(); //Reiniciar conteno de filas en el iterador
+                fila = IteradorFila.next(); //Omitimos la primer fila
+
+                while(IteradorFila.hasNext()){
+                    fila = IteradorFila.next(); //Saltamos de fila
+                    Iterator<Cell> cellIterator = fila.cellIterator(); //Tomamos las celdas de dicha fila
+                    Cell celda;
+
+                    while(cellIterator.hasNext()){ //...Recorremos las celdas de esa fila
+                        celda = cellIterator.next();
+                        if(celda.getColumnIndex() == NombresIncognitas.indexOf(NombreCol)){ //Si la casilla pertenece a la columna buscada...
+                            xn.setValor(celda.toString());   //...la agregamos a los valores de la variable
+                        }
+                    }                    
+                }
+                listaVariables.add(xn); //Agregamos la variable a la lista de variables
+            }
+            Convertir(listaVariables, xn);
         }
         catch(Exception e){
-            e.getMessage();
+            e.printStackTrace();
         }
     }  
+
+// Esto es lo que mando Isaac------------------------------------
+    public static void Convertir(ArrayList<Variable> listaVariables, Variable xn){
+        String ecuacion = "";
+        for(int j = 0; j < xn.getTamanoLista(); j++)
+        {
+            ecuacion = "2*x_1^2 - x_2 + x_3";
+            System.out.println("Ecuacion a evaluar: " + ecuacion + "\n");
+            for(Variable variable : listaVariables)
+            {
+                System.out.println("Vuelta: " + j);
+                System.out.println(variable.toString(j));
+                ecuacion = ecuacion.replaceAll(variable.getVariable(), variable.getValor(j));
+            }
+        
+            System.out.println("\nEcuacion Formateada: " + ecuacion);
+            System.out.println("\n--------------------------\n");
+        }
+    }
+
 }  
